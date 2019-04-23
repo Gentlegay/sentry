@@ -8,7 +8,6 @@ from sentry.models import (
     AuditLogEntryEvent, ApiGrant, SentryApp, SentryAppInstallation
 )
 from sentry.utils.cache import memoize
-from sentry.utils.audit import create_audit_entry
 from sentry.tasks.sentry_apps import installation_webhook
 
 
@@ -53,6 +52,7 @@ class Creator(Mediator):
         installation_webhook.delay(self.install.id, self.user.id)
 
     def audit(self):
+        from sentry.utils.audit import create_audit_entry
         if self.request:
             create_audit_entry(
                 request=self.request,
