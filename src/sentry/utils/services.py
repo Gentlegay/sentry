@@ -9,7 +9,7 @@ import threading
 import six
 from django.utils.functional import empty, LazyObject
 
-from sentry.utils import warnings
+from sentry.utils import warnings, metrics
 from sentry.utils.concurrent import FutureSet, ThreadedExecutor
 
 from .imports import import_string
@@ -69,7 +69,19 @@ class LazyServiceWrapper(LazyObject):
     def __getattr__(self, name):
         if self._wrapped is empty:
             self._setup()
-        return getattr(self._wrapped, name)
+
+        attr = getattr(self._wrapped, name)
+
+        # If our attr is a method, and we want to collect
+        # metrics, we need to wrap in a closure for metrics.timer
+        if callable(attr) and self._metrics_path and name not in {'setup', 'validate'}:
+            @functools.wraps(attr)
+            def wrapper(*args, **kwargs):
+                with metrics.timer(self._metrics_path, instance=name, tags={'backend': self._backend}):
+                    return attr(*args, **kwargs)
+            return wrapper
+
+        return attr
 
     def _setup(self):
         backend = import_string(self._backend)
@@ -83,6 +95,7 @@ class LazyServiceWrapper(LazyObject):
             )
         instance = backend(**self._options)
         self._wrapped = instance
+        self.__dict__['_metrics_path'] = getattr(instance, 'metrics_path', None)
 
     def expose(self, context):
         base = self._base

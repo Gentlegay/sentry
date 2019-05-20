@@ -66,6 +66,8 @@ class BigtableNodeStorage(NodeStorage):
     ... )
     """
 
+    metrics_path = 'nodestore'
+
     max_size = 1024 * 1024 * 10
     column_family = b'x'
     ttl_column = b't'
