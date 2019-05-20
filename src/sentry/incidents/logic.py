@@ -227,3 +227,9 @@ def get_incident_aggregates(incident):
         limit=10000,
         **kwargs
     )['data'][0]
+
+
+def get_incident_activity(incident):
+    return IncidentActivity.objects.filter(
+        incident=incident,
+    ).select_related('user', 'event_stats_snapshot', 'incident')
