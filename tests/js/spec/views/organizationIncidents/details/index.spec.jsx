@@ -58,6 +58,8 @@ describe('IncidentDetails', function() {
     );
     await tick();
     wrapper.update();
-    expect(wrapper.find('LoadingError')).toHaveLength(1);
+
+    // 2 failures: incident details and incident activity
+    expect(wrapper.find('LoadingError')).toHaveLength(2);
   });
 });
